@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -26,6 +27,14 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserSummaryDto> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getOneUserById(id));
+    }
+
+    @PatchMapping("/account")
+    public ResponseEntity<UserSummaryDto> editAccount(
+            @AuthenticationPrincipal UserDto userDto,
+            @RequestParam BigDecimal money,
+            @RequestParam Long receiverId) {
+        return ResponseEntity.ok(userService.sendMoney(userDto, money, receiverId));
     }
 
     @PostMapping("/email")
@@ -50,11 +59,19 @@ public class UserController {
         return ResponseEntity.ok(userService.deleteEmail(userDto, email));
     }
 
-    @PatchMapping("/phone-number")
+    @PostMapping("/phone-number")
     public ResponseEntity<UserSummaryDto> addPhoneNumberToUser(
             @AuthenticationPrincipal UserDto userDto,
             @RequestParam String phoneNumber) {
         return ResponseEntity.ok(userService.addPhoneNumber(userDto, phoneNumber));
+    }
+
+    @PatchMapping("/phone-number")
+    public ResponseEntity<UserSummaryDto> editPhoneNumberToUser(
+            @AuthenticationPrincipal UserDto userDto,
+            @RequestParam String oldPhoneNumber,
+            @RequestParam String newPhoneNumber) {
+        return ResponseEntity.ok(userService.editPhoneNumber(userDto, oldPhoneNumber, newPhoneNumber));
     }
 
     @DeleteMapping("/phone-number")
@@ -63,11 +80,6 @@ public class UserController {
             @RequestParam String phoneNumber) {
         return ResponseEntity.ok(userService.deletePhoneNumber(userDto, phoneNumber));
     }
-
-    //todo: add phoneNumber
-    //todo: delete phoneNumber and email, should be left at least one last one
-
-    //todo: edit existing phoneNumber
 
     //todo: send money to another user
     //todo: users account cannot go to minus

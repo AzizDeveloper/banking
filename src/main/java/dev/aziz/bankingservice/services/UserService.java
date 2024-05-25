@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.nio.CharBuffer;
 import java.util.List;
 import java.util.Optional;
@@ -136,14 +137,11 @@ public class UserService {
         oldDbEmail.setName(newEmail);
         Email savedNewEmail = emailRepository.save(oldDbEmail);
         log.info("User by login {} has been updated email {}.", user.getLogin(), savedNewEmail.getName());
-        System.out.println("user.getEmails() = " + user.getEmails());
         user.getEmails().add(savedNewEmail);
         User savedUser = userRepository.save(user);
-        System.out.println("user.getEmails() = " + user.getEmails());
         return userMapper.userToUserSummaryDto(savedUser);
     }
 
-    //todo: complete this method. user must have at least one email, not 0.
     @Transactional
     public String deleteEmail(UserDto userDto, String email) {
         log.info("User {} deleted email {}.", userDto.getLogin(), email);
@@ -160,7 +158,6 @@ public class UserService {
         return "Email by name: " + email + " deleted successfully.";
     }
 
-    //todo: complete this method
     @Transactional
     public UserSummaryDto addPhoneNumber(UserDto userDto, String phoneNumber) {
         User user = userRepository.findByLogin(userDto.getLogin())
@@ -177,7 +174,6 @@ public class UserService {
         return userMapper.userToUserSummaryDto(user);
     }
 
-    //todo: complete this method. user must have at least one phone number, not 0.
     @Transactional
     public String deletePhoneNumber(UserDto userDto, String phoneNumber) {
         log.info("User {} deleted phone number {}.", userDto.getLogin(), phoneNumber);
@@ -194,5 +190,41 @@ public class UserService {
         return "Phone number: " + phoneNumber + " deleted successfully.";
     }
 
+    @Transactional
+    public UserSummaryDto editPhoneNumber(UserDto userDto, String oldPhoneNumber, String newPhoneNumber) {
+        User user = userRepository.findByLogin(userDto.getLogin())
+                .orElseThrow(() -> new AppException("User by " + userDto.getLogin() + "not found", HttpStatus.NOT_FOUND));
+        PhoneNumber oldDbPhoneNumber = phoneNumberRepository.findByNumber(oldPhoneNumber)
+                .orElseThrow(() -> new AppException("Phone number not found", HttpStatus.NOT_FOUND));
+        Optional<PhoneNumber> newOptionalPhoneNumber = phoneNumberRepository.findByNumber(oldPhoneNumber);
+        if (newOptionalPhoneNumber.isPresent()) {
+            throw new AppException("This phone number already exists", HttpStatus.BAD_REQUEST);
+        }
+        user.getPhoneNumbers().remove(oldDbPhoneNumber);
+        oldDbPhoneNumber.setNumber(newPhoneNumber);
+        PhoneNumber savedNewPhoneNumber = phoneNumberRepository.save(oldDbPhoneNumber);
+        log.info("User by login {} has been updated phone number {}.", user.getLogin(), savedNewPhoneNumber.getNumber());
+        user.getPhoneNumbers().add(savedNewPhoneNumber);
+        User savedUser = userRepository.save(user);
+        return userMapper.userToUserSummaryDto(savedUser);
 
+    }
+
+    @Transactional
+    public UserSummaryDto sendMoney(UserDto userDto, BigDecimal money, Long receiverId) {
+        User sender = userRepository.findByLogin(userDto.getLogin())
+                .orElseThrow(() -> new AppException("User by " + userDto.getLogin() + "not found", HttpStatus.NOT_FOUND));
+        User receiver = userRepository.findById(receiverId)
+                .orElseThrow(() -> new AppException("User by id " + receiverId + "not found", HttpStatus.NOT_FOUND));
+        if (sender.getAccount().subtract(money).compareTo(BigDecimal.ZERO) < 0) {
+            throw new AppException("You do not have enough money.", HttpStatus.BAD_REQUEST);
+        }
+        BigDecimal subtracted = sender.getAccount().subtract(money);
+        BigDecimal added = receiver.getAccount().add(money);
+        sender.setAccount(subtracted);
+        receiver.setAccount(added);
+        User savedSender = userRepository.save(sender);
+        userRepository.save(receiver);
+        return userMapper.userToUserSummaryDto(savedSender);
+    }
 }
