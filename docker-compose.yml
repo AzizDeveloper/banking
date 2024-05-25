@@ -1,0 +1,12 @@
+version: '3.1'
+services:
+  db:
+    image: postgres:16.3
+    restart: always
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_USER: user_db
+      POSTGRES_PASSWORD: pass_db
+      POSTGRES_DB: bank_db
+    ports:
+      - 5433:5432
