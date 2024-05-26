@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -28,8 +29,8 @@ public class User {
     @NotNull(message = "Lastname should not be empty")
     private String lastName;
 
-    @NotNull(message = "Birth of year should not be empty")
-    private Integer birthYear;
+    @NotNull(message = "Birth date should not be empty")
+    private LocalDate birthDate;
 
     @NotNull(message = "Login should not be empty")
     @Column(unique = true)
@@ -38,11 +39,11 @@ public class User {
     @NotNull(message = "Password should not be empty")
     private String password;
 
-    @Column(precision = 8, scale = 3)
+    @Column(precision = 15, scale = 3)
     @Positive
     private BigDecimal account;
 
-    @Column(precision = 8, scale = 3)
+    @Column(precision = 15, scale = 3)
     @Positive
     private BigDecimal initialDeposit;
 

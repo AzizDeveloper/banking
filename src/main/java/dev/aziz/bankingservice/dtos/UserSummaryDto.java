@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -21,7 +22,7 @@ public class UserSummaryDto {
     private String firstName;
     private String lastName;
     private String login;
-    private Integer birthYear;
+    private LocalDate birthDate;
     private BigDecimal account;
     private List<Email> emails;
     private List<PhoneNumber> phoneNumbers;

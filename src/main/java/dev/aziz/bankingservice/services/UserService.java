@@ -14,6 +14,10 @@ import dev.aziz.bankingservice.repositories.PhoneNumberRepository;
 import dev.aziz.bankingservice.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -75,7 +79,7 @@ public class UserService {
                 .login(signUpDto.getLogin())
                 .account(signUpDto.getAccount())
                 .initialDeposit(signUpDto.getAccount())
-                .birthYear(signUpDto.getBirthYear())
+                .birthDate(signUpDto.getBirthDate())
                 .build();
         user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
         User savedUser = userRepository.save(user);
@@ -107,6 +111,25 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         return userMapper.userToUserSummaryDto(user);
+    }
+
+    public Page<User> searchUsers(Integer birthDate, String phone,
+                                  String name, String email,
+                                  int page, int size,
+                                  String sortField, String sortDirection) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        try {
+            if (name == null) {
+                System.out.println("Name is null. name: " + name);
+                return userRepository.searchUsersWithoutLogin(birthDate, phone, email, pageable);
+            }
+            System.out.println("Name is not null. name: " + name);
+            return userRepository.searchUsers(birthDate, phone, name, email, pageable);
+        } catch (Exception e) {
+            throw new AppException("Search failed", HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Transactional
@@ -254,4 +277,5 @@ public class UserService {
             }
         }
     }
+
 }

@@ -3,6 +3,7 @@ package dev.aziz.bankingservice.exceptions;
 import dev.aziz.bankingservice.dtos.ErrorDto;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,7 +29,6 @@ public class RestExceptionHandler {
         for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
             message = message + fieldError.getDefaultMessage() + " | ";
         }
-
         return ResponseEntity
                 .badRequest()
                 .body(ErrorDto.builder().message(message).build());
@@ -41,9 +41,16 @@ public class RestExceptionHandler {
         for (ConstraintViolation violation : exception.getConstraintViolations()) {
             message = message + violation.getMessage() + " | ";
         }
-
         return ResponseEntity
                 .badRequest()
                 .body(ErrorDto.builder().message(message).build());
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseBody
+    public ResponseEntity<ErrorDto> handleException(Exception exception) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorDto.builder().message("An unexpected error occurred.").build());
     }
 }

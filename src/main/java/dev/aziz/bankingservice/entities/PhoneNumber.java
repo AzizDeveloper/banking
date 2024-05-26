@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
-import org.springframework.format.annotation.NumberFormat;
 
 @Getter
 @Setter
@@ -21,7 +20,7 @@ public class PhoneNumber {
     private Long id;
 
     @NotNull(message = "Phone number should not be empty")
-    @Pattern(regexp = "^\\+(?:[0-9] ?){6,14}[0-9]$", message = "Invalid phone number format")
+    @Pattern(regexp = "^(?:[0-9] ?){6,14}[0-9]$", message = "Invalid phone number format")
     @Column(unique = true)
     private String number;
 
