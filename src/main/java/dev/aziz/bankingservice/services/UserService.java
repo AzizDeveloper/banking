@@ -15,6 +15,7 @@ import dev.aziz.bankingservice.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +26,8 @@ import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-@Service
 @Slf4j
+@Service
 public class UserService {
 
     private final UserRepository userRepository;
@@ -73,6 +74,7 @@ public class UserService {
                 .lastName(signUpDto.getLastName())
                 .login(signUpDto.getLogin())
                 .account(signUpDto.getAccount())
+                .initialDeposit(signUpDto.getAccount())
                 .birthYear(signUpDto.getBirthYear())
                 .build();
         user.setPassword(passwordEncoder.encode(CharBuffer.wrap(signUpDto.getPassword())));
@@ -226,5 +228,30 @@ public class UserService {
         User savedSender = userRepository.save(sender);
         userRepository.save(receiver);
         return userMapper.userToUserSummaryDto(savedSender);
+    }
+
+    @Transactional
+    @Scheduled(fixedRate = 60000)
+    public void incrementUserAccount() {
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            log.info("No users found. Skipping increment operation.");
+            return;
+        }
+        for (User user : users) {
+            BigDecimal currentBalance = user.getAccount();
+            BigDecimal initialDeposit = user.getInitialDeposit();
+            BigDecimal maxBalance = initialDeposit.multiply(BigDecimal.valueOf(2.07));
+
+            if (currentBalance.compareTo(maxBalance) < 0) {
+                BigDecimal increment = currentBalance.multiply(BigDecimal.valueOf(0.05));
+                BigDecimal newBalance = currentBalance.add(increment);
+                if (newBalance.compareTo(maxBalance) > 0) {
+                    newBalance = maxBalance;
+                }
+                user.setAccount(newBalance);
+                userRepository.save(user);
+            }
+        }
     }
 }

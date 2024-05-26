@@ -24,6 +24,7 @@ public class PhoneNumber {
     @Pattern(regexp = "^\\+(?:[0-9] ?){6,14}[0-9]$", message = "Invalid phone number format")
     @Column(unique = true)
     private String number;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

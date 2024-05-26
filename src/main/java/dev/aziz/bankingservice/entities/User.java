@@ -42,6 +42,10 @@ public class User {
     @Positive
     private BigDecimal account;
 
+    @Column(precision = 8, scale = 3)
+    @Positive
+    private BigDecimal initialDeposit;
+
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Email> emails;
 
