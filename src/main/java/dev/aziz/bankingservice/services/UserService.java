@@ -93,40 +93,46 @@ public class UserService {
         return userDto;
     }
 
-    @Transactional(readOnly = true)
-    public List<UserSummaryDto> getAllUsers() {
-        List<UserSummaryDto> userSummaryDtos =
-                userMapper.usersToUserSummaryDtos(userRepository.findAll());
-        for (UserSummaryDto userSummaryDto : userSummaryDtos) {
-            List<Email> emailsByUserId = emailRepository.findEmailsByUserId(userSummaryDto.getId());
-            userSummaryDto.setEmails(emailsByUserId);
-
-            List<PhoneNumber> numbersByUserId = phoneNumberRepository.findPhoneNumbersByUserId(userSummaryDto.getId());
-            userSummaryDto.setPhoneNumbers(numbersByUserId);
-        }
-        return userSummaryDtos;
-    }
-
     public UserSummaryDto getOneUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException("User not found", HttpStatus.NOT_FOUND));
         return userMapper.userToUserSummaryDto(user);
     }
 
-    public Page<User> searchUsers(Integer birthDate, String phone,
-                                  String name, String email,
-                                  int page, int size,
-                                  String sortField, String sortDirection) {
+
+    @Transactional
+    public List<UserSummaryDto> searchUsers(Integer birthDate, String phone,
+                                            String name, String email,
+                                            int page, int size,
+                                            String sortField, String sortDirection) {
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
         Pageable pageable = PageRequest.of(page, size, sort);
 
         try {
             if (name == null) {
-                System.out.println("Name is null. name: " + name);
-                return userRepository.searchUsersWithoutLogin(birthDate, phone, email, pageable);
+                Page<User> users1 = userRepository.searchUsersWithoutLogin(birthDate, phone, email, pageable);
+                List<UserSummaryDto> userSummaryDtos =
+                        userMapper.usersToUserSummaryDtos(users1.stream().toList());
+                for (UserSummaryDto userSummaryDto : userSummaryDtos) {
+                    List<Email> emailsByUserId = emailRepository.findEmailsByUserId(userSummaryDto.getId());
+                    userSummaryDto.setEmails(emailsByUserId);
+
+                    List<PhoneNumber> numbersByUserId = phoneNumberRepository.findPhoneNumbersByUserId(userSummaryDto.getId());
+                    userSummaryDto.setPhoneNumbers(numbersByUserId);
+                }
+                return userSummaryDtos;
             }
-            System.out.println("Name is not null. name: " + name);
-            return userRepository.searchUsers(birthDate, phone, name, email, pageable);
+            Page<User> users2 = userRepository.searchUsers(birthDate, phone, name, email, pageable);
+            List<UserSummaryDto> userSummaryDtos =
+                    userMapper.usersToUserSummaryDtos(users2.stream().toList());
+            for (UserSummaryDto userSummaryDto : userSummaryDtos) {
+                List<Email> emailsByUserId = emailRepository.findEmailsByUserId(userSummaryDto.getId());
+                userSummaryDto.setEmails(emailsByUserId);
+
+                List<PhoneNumber> numbersByUserId = phoneNumberRepository.findPhoneNumbersByUserId(userSummaryDto.getId());
+                userSummaryDto.setPhoneNumbers(numbersByUserId);
+            }
+            return userSummaryDtos;
         } catch (Exception e) {
             throw new AppException("Search failed", HttpStatus.BAD_REQUEST);
         }
@@ -238,9 +244,9 @@ public class UserService {
     @Transactional
     public UserSummaryDto sendMoney(UserDto userDto, BigDecimal money, Long receiverId) {
         User sender = userRepository.findByLogin(userDto.getLogin())
-                .orElseThrow(() -> new AppException("User by " + userDto.getLogin() + "not found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("User by " + userDto.getLogin() + " not found", HttpStatus.NOT_FOUND));
         User receiver = userRepository.findById(receiverId)
-                .orElseThrow(() -> new AppException("User by id " + receiverId + "not found", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new AppException("User by id " + receiverId + " not found", HttpStatus.NOT_FOUND));
         if (sender.getAccount().subtract(money).compareTo(BigDecimal.ZERO) < 0) {
             throw new AppException("You do not have enough money.", HttpStatus.BAD_REQUEST);
         }
